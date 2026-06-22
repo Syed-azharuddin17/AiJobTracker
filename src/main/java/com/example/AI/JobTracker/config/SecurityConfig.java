@@ -34,35 +34,32 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
-                // 1. Configure CORS and bind your Render FRONTEND_URL environment variable
+                // 1. Clear CORS configuration mapping
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
                     String allowedOrigin = System.getenv("FRONTEND_URL");
                     if (allowedOrigin == null || allowedOrigin.isEmpty()) {
                         allowedOrigin = "http://localhost:5173";
                     }
-                    // Fixes the missing allowed origins connection
                     config.setAllowedOrigins(List.of(allowedOrigin));
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                    // Allows all headers to prevent browser preflight blocks
                     config.setAllowedHeaders(List.of("*"));
                     config.setAllowCredentials(true);
                     return config;
                 }))
-                // 2. Disable CSRF for REST stateless APIs
+                // 2. Disable CSRF completely for REST architecture
                 .csrf(csrf -> csrf.disable())
-                // 3. Set up Endpoint Routing and Permissions
+
+                // 3. Explicitly allow ALL requests to the auth endpoints before any filter logic
                 .authorizeHttpRequests(auth -> auth
-                        // Safely allows all browser OPTIONS preflight requests using clean syntax
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/jobs/**").authenticated()
-                        .requestMatchers("/api/resume/**").authenticated()
                         .anyRequest().authenticated()
                 )
-                // 4. Set Session Policy to Stateless (Since we use JWT tokens)
+
+                // 4. Set Session Management to Stateless
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // 5. Inject your custom JWT Filter before the standard username/password filter
+
+                // 5. Inject your JWT Auth Filter
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return httpSecurity.build();
