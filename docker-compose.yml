@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # 1. Your Database Service (Kept exactly as you wrote it)
+  db:
+    image: postgres:15
+    container_name: career_coach_db
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 2. Your pgAdmin Service (Kept exactly as you wrote it)
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_gui
+    env_file: .env
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    ports:
+      - "8081:80"
+    depends_on:
+      - db
+
+  # 3. The Missing Piece: Your Spring Boot Backend Service
+  backend:
+    build: ./backend # Tells Docker where your Dockerfile lives
+    container_name: career_coach_backend
+    env_file: .env   # Reads all secrets from your local .env file
+    environment:
+      # This bridges your .env to the exact placeholders inside app.properties
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db # Forces the backend to wait until Postgres is running
+
+volumes:
+  postgres_data:
