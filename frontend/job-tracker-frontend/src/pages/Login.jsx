@@ -1,39 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link, useNavigate } from 'react-router-dom'; 
-import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
-import { apiService } from '../services/api'; // 👈 Imported the API Service
+import { Link, useNavigate } from 'react-router-dom';
+import { Mail, Lock, Eye, EyeOff, Loader2, Rocket, Info } from 'lucide-react';
+import { apiService } from '../services/api';
+
+const DEMO_CREDENTIALS = {
+  email: 'recruiter@demo.com',
+  password: 'DemoPassword123!',
+};
 
 export default function Login() {
     const { login } = useAuth();
-    const navigate = useNavigate(); 
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [isDemoLoading, setIsDemoLoading] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    // 💡 NEW: State to track if the server is taking a long time to wake up
+    const [showColdStartWarning, setShowColdStartWarning] = useState(false);
+
+    // 💡 NEW: Smart timer that triggers after 4 seconds of loading
+    useEffect(() => {
+        let timeout;
+        if (loading || isDemoLoading) {
+            timeout = setTimeout(() => {
+                setShowColdStartWarning(true);
+            }, 4000); // 4 seconds
+        } else {
+            setShowColdStartWarning(false);
+        }
+        return () => clearTimeout(timeout);
+    }, [loading, isDemoLoading]);
+
+    const executeLogin = async (loginEmail, loginPassword, isDemo = false) => {
         setError('');
-        setLoading(true);
+        if (isDemo) {
+            setIsDemoLoading(true);
+        } else {
+            setLoading(true);
+        }
 
         try {
-            // 💡 1. Hit the Spring Boot backend to verify credentials
-            const response = await apiService.login(email, password);
-            
-            // 💡 2. Pass the real JWT token and email to the AuthContext
-            // Assuming your backend sends JSON like: { "token": "eyJhbGci...", "email": "..." }
-            login(response.token, email);
-            
-            // 💡 3. Redirect to the Dashboard
+            const response = await apiService.login(loginEmail, loginPassword);
+            login(response.token, loginEmail);
             navigate('/', { replace: true });
-            
         } catch (err) {
             setError(err.message || 'Invalid email or password combination.');
         } finally {
             setLoading(false);
+            setIsDemoLoading(false);
+            setShowColdStartWarning(false);
         }
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        executeLogin(email, password, false);
+    };
+
+    const handleDemoLogin = () => {
+        setEmail(DEMO_CREDENTIALS.email);
+        setPassword(DEMO_CREDENTIALS.password);
+        executeLogin(DEMO_CREDENTIALS.email, DEMO_CREDENTIALS.password, true);
     };
 
     return (
@@ -94,12 +125,47 @@ export default function Login() {
 
                     <button
                         type="submit"
-                        disabled={loading}
-                        className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-100 transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer text-xs uppercase tracking-wider"
+                        disabled={loading || isDemoLoading}
+                        className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-lg shadow-slate-200 transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer text-xs uppercase tracking-wider"
                     >
                         {loading ? <Loader2 className="animate-spin" size={18} /> : 'Sign In'}
                     </button>
                 </form>
+
+                <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-slate-200"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                        <span className="px-2 bg-white text-slate-500">Or</span>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={handleDemoLogin}
+                    disabled={loading || isDemoLoading}
+                    className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-100 transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer text-xs uppercase tracking-wider"
+                >
+                    {isDemoLoading ? (
+                        <Loader2 className="animate-spin" size={18} />
+                    ) : (
+                        <>
+                            <Rocket size={18} />
+                            Instant Recruiter Demo
+                        </>
+                    )}
+                </button>
+
+                {/* 💡 NEW: Smart Cold Start Warning */}
+                {showColdStartWarning && (
+                    <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3 text-amber-800 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <Info size={18} className="mt-0.5 shrink-0 text-amber-600" />
+                        <p className="text-xs leading-relaxed font-medium">
+                            <strong>Waking up the server.</strong> Since this backend is hosted on a free tier, it goes to sleep after inactivity. It may take up to <strong>50 seconds</strong> for this initial login to process.
+                        </p>
+                    </div>
+                )}
 
                 <p className="text-center text-sm text-slate-500 mt-6">
                     Don't have an account yet?{' '}

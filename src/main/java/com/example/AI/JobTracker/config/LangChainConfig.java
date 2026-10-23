@@ -11,7 +11,7 @@ import java.time.Duration;
 @Configuration
 public class LangChainConfig {
 
-    // This pulls your secret AIza key straight from your application.properties file
+
     @Value("${gemini.api.key}")
     private String apiKey;
 

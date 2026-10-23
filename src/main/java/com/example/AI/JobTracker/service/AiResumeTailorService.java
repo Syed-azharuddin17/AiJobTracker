@@ -25,7 +25,7 @@ public interface AiResumeTailorService {
         - Output the final result in clean, professional Markdown text. 
         - Start directly with the candidate's name at the very top. Do NOT include any introductory conversational fluff, greetings, or notes.
     """)
-    String tailor(@UserMessage  @V("jobDescription") String jobDescription, @V("resume") String resumeText);
+    String  tailor(@UserMessage  @V("jobDescription") String jobDescription, @V("resume") String resumeText);
 
 
 
