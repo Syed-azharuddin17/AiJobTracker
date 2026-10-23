@@ -37,7 +37,7 @@ export default function ResumeTailor({ jobs }) {
         uploadData.append('file', file);
 
         try {
-            const uploadRes = await fetch('http://localhost:8080/api/resume/upload', {
+            const uploadRes = await fetch('https://career-coach-backend-sdcr.onrender.com/api/resume/upload', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -53,7 +53,7 @@ export default function ResumeTailor({ jobs }) {
             // --- STEP 2: Tailor via AI Engine using Path Variable ---
             setStatusMessage('Aligning credentials with AI engine...');
             
-            const tailorRes = await fetch(`http://localhost:8080/api/resume/tailor/${selectedJobId}`, {
+            const tailorRes = await fetch(`https://career-coach-backend-sdcr.onrender.com/api/resume/tailor/${selectedJobId}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
