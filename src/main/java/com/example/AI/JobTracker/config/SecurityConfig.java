@@ -53,6 +53,7 @@ public class SecurityConfig {
                 // 3. Explicitly allow ALL requests to the auth endpoints before any filter logic
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/resume/**").permitAll()
                         .anyRequest().authenticated()
                 )
 
