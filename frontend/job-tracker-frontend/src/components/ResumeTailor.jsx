@@ -45,20 +45,25 @@ export default function ResumeTailor({ jobs }) {
                 body: uploadData
             });
 
-            if (!uploadRes.ok) {
-                const uploadError = await uploadRes.text();
-                throw new Error(uploadError || 'Failed to extract text from your resume file.');
-            }
+           if (!uploadRes.ok) {
+                           const uploadError = await uploadRes.text();
+                           throw new Error(uploadError || 'Failed to extract text from your resume file.');
+                       }
+
+                   const extractedResumeText = await uploadRes.text();
 
             // --- STEP 2: Tailor via AI Engine using Path Variable ---
             setStatusMessage('Aligning credentials with AI engine...');
             
             const tailorRes = await fetch(`https://career-coach-backend-sdcr.onrender.com/api/resume/tailor/${selectedJobId}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'text/plain' // Tell Java we are sending raw text
+                            },
+                            // 👇 THE FIX: Attach the text to the body so Gemini can read it
+                            body: extractedResumeText
+                        });
 
             if (!tailorRes.ok) {
                 const tailorError = await tailorRes.text();

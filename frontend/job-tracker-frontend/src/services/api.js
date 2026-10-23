@@ -107,19 +107,26 @@ export const apiService = {
   },
 
   // 🪄 NEW: AI Tailor Hook (Returns the raw Markdown string)
-  tailorResume: async (jobId) => {
-    // 💡 THE FIX: Changed "/jobs/tailor" to "/resume/tailor" to match your controller
-    const res = await fetch(`${BASE_URL}/resume/tailor/${jobId}`, {
-      method: "POST",
-      headers: getHeaders(),
-    });
 
-    if (!res.ok) {
-      // This will now tell you EXACTLY what went wrong in the browser console
-      console.error(`Backend returned ${res.status}: ${res.statusText}`);
-      throw new Error("AI failed to tailor the resume");
-    }
+    // Add resumeText as a parameter
+      tailorResume: async (jobId, resumeText) => {
+        const res = await fetch(`${BASE_URL}/resume/tailor/${jobId}`, {
+          method: "POST",
+          headers: {
+              ...getHeaders(),
+              "Content-Type": "text/plain" // Tell Java we are sending raw text
+          },
+          // Send the text in the body!
+          body: resumeText
+        });
 
-    return res.text();
-  },
+        if (!res.ok) {
+          console.error(`Backend returned ${res.status}: ${res.statusText}`);
+          throw new Error("AI failed to tailor the resume");
+        }
+
+        return res.text();
+      },
+
+
 };
